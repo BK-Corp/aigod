@@ -1,0 +1,14 @@
+node_modules
+dist
+.git
+.vscode
+.githooks
+.github
+.gev-cache
+.gev-logs
+docs
+docs_old
+*.log
+.env
+.env.*
+!\.env.example

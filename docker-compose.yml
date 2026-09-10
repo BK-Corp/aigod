@@ -1,0 +1,17 @@
+version: '3.8'
+
+name: ai_aigod
+
+services:
+  aigod:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: registry.bkholding.vn/ai.aigod.app:${TAG:-0.1.1}
+    container_name: ai_aigod_app
+    ports:
+      - "${PORT:-21020}:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+    restart: unless-stopped
