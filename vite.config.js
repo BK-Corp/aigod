@@ -7738,6 +7738,11 @@ export default defineConfig(({ mode }) => {
   const env = { ...process.env };
   const localAllowedHosts = ['localhost', '127.0.0.1', '.local'];
   return {
+    base: '/aigod/',
+    preview: {
+      port: parseInt(env.PREVIEW_PORT, 10) || 20070,
+      host: env.HOST || '0.0.0.0',
+    },
     plugins: [
       cesium(),
       openSkyProxy(),
