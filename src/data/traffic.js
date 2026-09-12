@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import { t } from '../i18n.js';
 import { deriveFetchCenter, clampBoundsAroundCenter } from './trafficBounds.js';
 import { fetchFlowForBounds, getFlowSessionStats, resetFlowTileCache } from './flowTiles.js';
 import { matchFlowToRoads } from './flowMatch.js';
@@ -1256,7 +1257,10 @@ export function trafficFeedPresentation({
     // drops `loadingLabel` in its error branch, so the owner's SIMULATED copy
     // has to BE the error text or the steady state reverts to a bare
     // "TomTom daily budget reached" that never says what is on screen.
-    const degraded = `SIMULATED — ${flowError}`;
+    const degraded = t('traffic.degraded', {
+      error: flowError,
+      defaultValue: `SIMULATED — ${flowError}`,
+    });
     return { mode, error: degraded, loadingLabel: degraded };
   }
   if (liveMode) {
@@ -1264,8 +1268,8 @@ export function trafficFeedPresentation({
       mode,
       error: null,
       loadingLabel: fetching
-        ? 'syncing LIVE traffic flow'
-        : `LIVE · TomTom flow · ${coveragePct}% cov`,
+        ? t('traffic.syncingLive', { defaultValue: 'syncing LIVE traffic flow' })
+        : t('traffic.liveFlow', { pct: coveragePct, defaultValue: `LIVE · TomTom flow · ${coveragePct}% cov` }),
     };
   }
   // Keyless simulation — one terse line that names the mode and the remedy
@@ -1275,8 +1279,8 @@ export function trafficFeedPresentation({
     mode,
     error: null,
     loadingLabel: statusUnavailable
-      ? 'SIMULATED — traffic service unreachable'
-      : 'SIMULATED — add TomTom key for live',
+      ? t('traffic.unreachable', { defaultValue: 'SIMULATED — traffic service unreachable' })
+      : t('traffic.addKey', { defaultValue: 'SIMULATED — add TomTom key for live' }),
   };
 }
 

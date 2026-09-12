@@ -1,5 +1,6 @@
 import { governorRequestRender } from '../renderGovernor.js';
 import { markDetectionSourcesChanged } from './detection.js';
+import { t } from '../i18n.js';
 function cloneLayerParams(value) {
   if (Array.isArray(value)) return value.map(cloneLayerParams);
   if (value && typeof value === 'object') {
@@ -18,6 +19,20 @@ const FEED_STATE_LABELS = Object.freeze({
   fallback: 'FALLBACK',
   unavailable: 'UNAVAILABLE',
 });
+
+const FEED_STATE_KEYS = Object.freeze({
+  nominal: 'feedState.nominal',
+  loading: 'feedState.loading',
+  degraded: 'feedState.degraded',
+  stale: 'feedState.stale',
+  fallback: 'feedState.fallback',
+  unavailable: 'feedState.unavailable',
+});
+
+/** Localized label for a feed state; falls back to the English source label. */
+function feedStateLabel(state) {
+  return t(FEED_STATE_KEYS[state] || state, { defaultValue: FEED_STATE_LABELS[state] || state });
+}
 
 const SUPERSEDED_VISIBILITY_INTENT = Symbol('superseded-visibility-intent');
 const VALID_LAYER_SERIALIZATION_DISPOSITIONS = new Set([
@@ -2033,7 +2048,7 @@ export class DataLayerManager {
 
       const left = document.createElement('div');
       left.className = 'data-toggle-left';
-      left.innerHTML = `<span class="data-icon">${layer.icon}</span><span class="data-name">${layer.name}</span>`;
+      left.innerHTML = `<span class="data-icon">${layer.icon}</span><span class="data-name">${this._layerDisplayName(layer)}</span>`;
 
       const right = document.createElement('div');
       right.className = 'data-toggle-right';
@@ -2210,27 +2225,27 @@ export class DataLayerManager {
   _buildMetaText(layer) {
     const stats = layer.stats || {};
     const feedState = layerFeedState(stats);
-    const stateLabel = FEED_STATE_LABELS[feedState];
+    const stateLabel = feedStateLabel(feedState);
     const source = stats.source || layer.source;
     const lifecycleState = layer.lifecycleState || (layer.enabled ? 'enabled' : 'disabled');
     if (lifecycleState === 'enabling' || lifecycleState === 'disabling') {
-      return `${lifecycleState.toUpperCase()} · ${source}`;
+      return `${t(`feedState.${lifecycleState}`, { defaultValue: lifecycleState.toUpperCase() })} · ${source}`;
     }
     if (layer.lifecycleUncertain) {
-      return `UNCERTAIN · ${source} · lifecycle state requires reconciliation`;
+      return `${t('feedState.uncertain', { defaultValue: 'UNCERTAIN' })} · ${source} · ${t('feedState.lifecycleUncertainDetail', { defaultValue: 'lifecycle state requires reconciliation' })}`;
     }
     const presentedError = stats.error || stats.lastError || stats.managerRefreshError;
     if (presentedError) {
       if (typeof stats.retryInSec === 'number' && stats.retryInSec > 0) {
-        return `${stateLabel} · ${source} · ${presentedError} · retry ${stats.retryInSec}s`;
+        return `${stateLabel} · ${source} · ${presentedError} · ${t('feedState.retrySeconds', { count: stats.retryInSec, defaultValue: `retry ${stats.retryInSec}s` })}`;
       }
       return `${stateLabel} · ${source} · ${presentedError}`;
     }
-    const ago = stats.lastUpdate ? this._timeAgo(stats.lastUpdate) : 'never';
+    const ago = stats.lastUpdate ? this._timeAgo(stats.lastUpdate) : t('feedState.never', { defaultValue: 'never' });
     if (stats.loading) {
       const loadingLabel = typeof stats.loadingLabel === 'string' && stats.loadingLabel.trim()
         ? stats.loadingLabel.trim()
-        : 'loading...';
+        : t('feedState.loadingEllipsis', { defaultValue: 'loading...' });
       return `${source} · ${loadingLabel}`;
     }
     if (feedState === 'fallback') {
@@ -2241,7 +2256,7 @@ export class DataLayerManager {
     }
     if (feedState === 'stale') {
       const retry = typeof stats.retryInSec === 'number' && stats.retryInSec > 0
-        ? ` · retrying in ${stats.retryInSec}s`
+        ? ` · ${t('feedState.retryingSeconds', { count: stats.retryInSec, defaultValue: `retrying in ${stats.retryInSec}s` })}`
         : '';
       return `${stateLabel} · ${source} · ${ago}${retry}`;
     }
@@ -2268,9 +2283,15 @@ export class DataLayerManager {
       : (uncertain ? 'uncertain' : feedState);
     button.disabled = transitioning;
     button.textContent = transitioning
-      ? layer.lifecycleState.toUpperCase()
-      : (uncertain ? 'UNCERTAIN' : (layer.enabled ? FEED_STATE_LABELS[feedState] : 'OFF'));
-    button.setAttribute('aria-label', `${layer.name}: ${button.textContent}`);
+      ? t(`feedState.${layer.lifecycleState}`, { defaultValue: layer.lifecycleState.toUpperCase() })
+      : (uncertain
+        ? t('feedState.uncertain', { defaultValue: 'UNCERTAIN' })
+        : (layer.enabled ? feedStateLabel(feedState) : t('feedState.off', { defaultValue: 'OFF' })));
+    button.setAttribute('aria-label', `${this._layerDisplayName(layer)}: ${button.textContent}`);
+  }
+
+  _layerDisplayName(layer) {
+    return t(`layers.${layer.id}`, { defaultValue: layer.name });
   }
 
   _formatCount(n) {
@@ -2280,9 +2301,9 @@ export class DataLayerManager {
 
   _timeAgo(timestamp) {
     const diff = Math.floor((Date.now() - timestamp) / 1000);
-    if (diff < 5) return 'just now';
-    if (diff < 60) return `${diff}s ago`;
-    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-    return `${Math.floor(diff / 3600)}h ago`;
+    if (diff < 5) return t('feedState.updatedJustNow', { defaultValue: 'just now' });
+    if (diff < 60) return t('feedState.updatedSecondsAgo', { count: diff, defaultValue: `${diff}s ago` });
+    if (diff < 3600) return t('feedState.updatedMinutesAgo', { count: Math.floor(diff / 60), defaultValue: `${Math.floor(diff / 60)}m ago` });
+    return t('feedState.updatedHoursAgo', { count: Math.floor(diff / 3600), defaultValue: `${Math.floor(diff / 3600)}h ago` });
   }
 }

@@ -1,4 +1,5 @@
 import { createGevActionRunner, readLayerLifecycleSummary } from './gevActions.js';
+import { t } from '../i18n.js';
 import {
   DEFAULT_VOICE_TIER,
   VOICE_COST_LIMITS,
@@ -18,6 +19,13 @@ const STATUS = {
   listening: 'LISTENING',
   executing: 'EXECUTING',
   error: 'ERROR',
+};
+const STATUS_KEYS = {
+  idle: 'voice.status.idle',
+  connecting: 'voice.status.connecting',
+  listening: 'voice.status.listening',
+  executing: 'voice.status.executing',
+  error: 'voice.status.error',
 };
 const CALL_DEDUPE_MS = 2500;
 // WebRTC 'disconnected' is frequently momentary (a brief network blip that ICE
@@ -343,7 +351,7 @@ export class GevRealtimeController {
     this.pushToTalkKeyHeld = pushToTalkKeyHeld;
     this.spaceKeyHeld = spaceKeyHeld;
     if (!window.RTCPeerConnection || !navigator.mediaDevices?.getUserMedia) {
-      this.setStatus('error', 'WebRTC microphone support unavailable');
+      this.setStatus('error', t('voice.micUnsupported', { defaultValue: 'WebRTC microphone support unavailable' }));
       return;
     }
 
@@ -365,7 +373,7 @@ export class GevRealtimeController {
       limits: this.voiceLimits,
     });
     this.syncCostUi();
-    this.setStatus('connecting', 'Requesting microphone');
+    this.setStatus('connecting', t('voice.requestingMic', { defaultValue: 'Requesting microphone' }));
     this.debugLog('session.starting', {
       epoch,
       tier: this.voiceTier,
@@ -449,8 +457,10 @@ export class GevRealtimeController {
       this.dc = dataChannel;
       dataChannel.addEventListener('open', () => {
         const detail = this.pushToTalkMode
-          ? (this.pushToTalkKeyHeld ? 'Release Space to send' : 'Hold Space to talk')
-          : 'Ask or command';
+          ? (this.pushToTalkKeyHeld
+            ? t('voice.releaseToSend', { defaultValue: 'Release Space to send' })
+            : t('voice.holdToTalk', { defaultValue: 'Hold Space to talk' }))
+          : t('voice.askOrCommand', { defaultValue: 'Ask or command' });
         this.setStatus('listening', detail);
         this.debugLog('data_channel.open', { connection: this.connectionDiagnostics(dataChannel) });
       });
@@ -593,7 +603,9 @@ export class GevRealtimeController {
       this.ui.root.dataset.pushToTalk = 'held';
       if (this.isActive()) {
         this.setMicrophoneEnabled(true);
-        if (this.status === 'listening') this.setStatus('listening', 'Release Space to send');
+        if (this.status === 'listening') {
+          this.setStatus('listening', t('voice.releaseToSend', { defaultValue: 'Release Space to send' }));
+        }
       } else {
         this.start({ pushToTalk: true });
       }
@@ -632,7 +644,9 @@ export class GevRealtimeController {
     delete this.ui.root.dataset.pushToTalk;
     if (!this.pushToTalkMode) return;
     this.setMicrophoneEnabled(false);
-    if (this.status === 'listening') this.setStatus('listening', 'Hold Space to talk');
+    if (this.status === 'listening') {
+      this.setStatus('listening', t('voice.holdToTalk', { defaultValue: 'Hold Space to talk' }));
+    }
     else this.updateVoiceButtonLabel();
   }
 
@@ -890,7 +904,7 @@ export class GevRealtimeController {
       this.ui.root.remove();
     }
     if (!preserveStatus && !removeUi) {
-      this.setStatus('idle', 'Voice off');
+      this.setStatus('idle', t('voice.voiceOff', { defaultValue: 'Voice off' }));
     }
     this.setRadioVoiceDucking(false);
   }
@@ -1027,7 +1041,7 @@ export class GevRealtimeController {
           eventId: payload.event_id,
           activeResponseMessage: payload.error?.message || null,
         });
-        this.setStatus('listening', 'Ask or command');
+        this.setStatus('listening', t('voice.askOrCommand', { defaultValue: 'Ask or command' }));
         return;
       }
       // A conversation.item.delete for a stale viewport screenshot can land
@@ -1141,7 +1155,7 @@ export class GevRealtimeController {
       return;
     }
 
-    this.setStatus('executing', 'Running command');
+    this.setStatus('executing', t('voice.runningCommand', { defaultValue: 'Running command' }));
     this.pruneProcessedCalls();
     let sentOutput = false;
     let lastResult = null;
@@ -1357,7 +1371,7 @@ export class GevRealtimeController {
         this.pendingRadioPlaybackResult || lastResult,
       ));
     }
-    this.setStatus('listening', 'Ask or command');
+    this.setStatus('listening', t('voice.askOrCommand', { defaultValue: 'Ask or command' }));
   }
 
   sendToolOutput(callId, result) {
@@ -1439,18 +1453,25 @@ export class GevRealtimeController {
     this.ui.root.dataset.status = status;
     if (status === 'error') this.ui.root.classList.remove('error-dismissed');
     this.updateVoiceButtonLabel();
-    this.ui.status.textContent = STATUS[status] || STATUS.idle;
+    this.ui.status.textContent = t(STATUS_KEYS[status] || STATUS_KEYS.idle, {
+      defaultValue: STATUS[status] || STATUS.idle,
+    });
     const resolvedDetail = status === 'listening' && this.pushToTalkMode
-      ? (this.pushToTalkKeyHeld ? 'Release Space to send' : 'Hold Space to talk')
+      ? (this.pushToTalkKeyHeld
+        ? t('voice.releaseToSend', { defaultValue: 'Release Space to send' })
+        : t('voice.holdToTalk', { defaultValue: 'Hold Space to talk' }))
       : detail;
     const primaryDetail = status === 'error'
-      ? 'VOICE UNAVAILABLE'
-      : (resolvedDetail || (status === 'idle' ? 'VOICE STANDBY' : 'VOICE ACTIVE'));
+      ? t('voice.unavailable', { defaultValue: 'VOICE UNAVAILABLE' })
+      : (resolvedDetail
+        || (status === 'idle'
+          ? t('voice.standby', { defaultValue: 'VOICE STANDBY' })
+          : t('voice.active', { defaultValue: 'VOICE ACTIVE' })));
     this.ui.detail.textContent = primaryDetail;
     this.ui.detail.title = primaryDetail;
     if (this.ui.errorDetail) {
       this.ui.errorDetail.textContent = status === 'error'
-        ? (resolvedDetail || 'Voice session could not be started.')
+        ? (resolvedDetail || t('voice.sessionFailed', { defaultValue: 'Voice session could not be started.' }))
         : '';
     }
     if (status === 'idle' || status === 'connecting' || status === 'error') {
@@ -1622,7 +1643,7 @@ export class GevRealtimeController {
     this.debugLog('tool.radio_handoff', { result: radioHandoff.result });
     if (radioHandoff.result?.ok || radioHandoff.cancelled || !stillCurrent) return;
     if (this.dc?.readyState === 'open' && !this.userTurnPending) {
-      this.setStatus('listening', 'Radio did not start');
+      this.setStatus('listening', t('voice.radioDidNotStart', { defaultValue: 'Radio did not start' }));
       this.queueResponseCreate('Say exactly one short correction: “The Radio station could not start. Voice is still on.”');
     }
   }
@@ -1834,7 +1855,10 @@ export class GevRealtimeController {
     }
     this.syncCostUi();
     if (this.isActive() && this.ui?.detail) {
-      this.setStatus(this.status, `${this.voiceTier.toUpperCase()} applies next session`);
+      this.setStatus(this.status, t('voice.tierApplies', {
+        tier: this.voiceTier.toUpperCase(),
+        defaultValue: `${this.voiceTier.toUpperCase()} applies next session`,
+      }));
     }
     return this.voiceTier;
   }
@@ -1911,7 +1935,10 @@ export class GevRealtimeController {
     try {
       this.stop({ preserveStatus: true });
     } finally {
-      this.setStatus('idle', `Session ended — cost cap ${state.display}`);
+      this.setStatus('idle', t('voice.sessionEndedCap', {
+        cost: state.display,
+        defaultValue: `Session ended — cost cap ${state.display}`,
+      }));
       this.syncCostUi();
     }
   }
@@ -1954,7 +1981,7 @@ export class GevRealtimeController {
         // connection is still live. Recover to listening so the user can retry
         // (mirrors the transient-blip philosophy, H8).
         if (this.dc?.readyState === 'open') {
-          this.setStatus('listening', 'Ask or command');
+          this.setStatus('listening', t('voice.askOrCommand', { defaultValue: 'Ask or command' }));
         }
       }
       if (!this.pendingRadioPlaybackResult) {
@@ -2552,34 +2579,34 @@ function createVoiceControl({ reset = false } = {}) {
     root.dataset.speaker = 'idle';
     root.innerHTML = `
       <div class="gev-voice-heading">
-        <div class="gev-voice-kicker">AI AGENT</div>
-        <div id="gev-voice-status">OFF</div>
+        <div class="gev-voice-kicker">${t('voice.agent', { defaultValue: 'AI AGENT' })}</div>
+        <div id="gev-voice-status">${t('voice.off', { defaultValue: 'OFF' })}</div>
         <div class="gev-voice-cost">
-          <button id="gev-voice-tier" class="gev-voice-tier-btn" type="button" aria-pressed="false" title="Voice model tier — applies next session">STD</button>
-          <span id="gev-voice-cost-value" class="gev-voice-cost-value" data-level="ok" title="Estimated session cost">~$0.00</span>
+          <button id="gev-voice-tier" class="gev-voice-tier-btn" type="button" aria-pressed="false" title="${t('voice.tierTitle', { defaultValue: 'Voice model tier — applies next session' })}">STD</button>
+          <span id="gev-voice-cost-value" class="gev-voice-cost-value" data-level="ok" title="${t('voice.costTitle', { defaultValue: 'Estimated session cost' })}">~$0.00</span>
         </div>
       </div>
-      <button id="gev-voice-button" type="button" aria-label="Voice control — hold Space to speak; click to toggle voice" aria-describedby="gev-voice-help">
+      <button id="gev-voice-button" type="button" aria-label="${t('voice.buttonAria', { defaultValue: 'Voice control — hold Space to speak; click to toggle voice' })}" aria-describedby="gev-voice-help">
         <span class="gev-mic-orbit"><img src="/mic.svg" alt="" /></span>
-        <span class="gev-mic-label">ON/OFF</span>
+        <span class="gev-mic-label">${t('voice.onOff', { defaultValue: 'ON/OFF' })}</span>
       </button>
       <div class="gev-voice-visualizer" aria-hidden="true">
         ${Array.from({ length: 15 }, (_, index) => `<span style="--bar:${index}"></span>`).join('')}
       </div>
       <div class="gev-voice-readout">
-        <div id="gev-voice-detail">VOICE STANDBY</div>
+        <div id="gev-voice-detail">${t('voice.standby', { defaultValue: 'VOICE STANDBY' })}</div>
       </div>
       <div id="gev-voice-help" class="gev-voice-help-tray" role="tooltip">
-        <span class="gev-voice-help-kicker">VOICE CONTROL</span>
-        <span class="gev-voice-help-detail">Hold Space to speak · click mic to toggle voice</span>
+        <span class="gev-voice-help-kicker">${t('voice.control', { defaultValue: 'VOICE CONTROL' })}</span>
+        <span class="gev-voice-help-detail">${t('voice.helpDetail', { defaultValue: 'Hold Space to speak · click mic to toggle voice' })}</span>
       </div>
       <div class="gev-voice-error-tray" role="alert" aria-live="assertive">
         <div class="gev-voice-error-header">
-          <span>VOICE SYSTEM ERROR</span>
-          <button class="gev-voice-error-dismiss" type="button">DISMISS</button>
+          <span>${t('voice.systemError', { defaultValue: 'VOICE SYSTEM ERROR' })}</span>
+          <button class="gev-voice-error-dismiss" type="button">${t('voice.dismiss', { defaultValue: 'DISMISS' })}</button>
         </div>
         <div id="gev-voice-error-detail"></div>
-        <div class="gev-voice-error-hint">Check microphone permission and network access, then try again.</div>
+        <div class="gev-voice-error-hint">${t('voice.errorHint', { defaultValue: 'Check microphone permission and network access, then try again.' })}</div>
       </div>
     `;
     const commandDock = document.getElementById('command-dock');

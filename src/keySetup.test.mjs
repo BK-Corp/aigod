@@ -1,16 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { initI18n } from './i18n.js';
 import {
   collectKeyUpdates,
   keySetupChipLabel,
   stripKeylessBasemapFromHash,
 } from './keySetup.js';
 
+// The chip label is driven by i18n; prime the module before asserting.
+await initI18n();
+
 test('the chip counts what is missing, and retires the count at zero', () => {
-  assert.equal(keySetupChipLabel({ setCount: 0, total: 8 }), 'POWER UP · 8 KEYS WAITING');
-  assert.equal(keySetupChipLabel({ setCount: 7, total: 8 }), 'POWER UP · 1 KEY WAITING');
-  assert.equal(keySetupChipLabel({ setCount: 8, total: 8 }), 'POWERED UP');
-  assert.equal(keySetupChipLabel(null), 'POWERED UP', 'no status is not a broken label');
+  // Vietnamese is the default locale, so the chip renders in Vietnamese.
+  assert.equal(keySetupChipLabel({ setCount: 0, total: 8 }), 'POWER UP · 8 KHÓA CHỜ');
+  assert.equal(keySetupChipLabel({ setCount: 7, total: 8 }), 'POWER UP · 1 KHÓA CHỜ');
+  assert.equal(keySetupChipLabel({ setCount: 8, total: 8 }), 'ĐÃ CẤP SỨC');
+  assert.equal(keySetupChipLabel(null), 'ĐÃ CẤP SỨC', 'no status is not a broken label');
 });
 
 test('collectKeyUpdates keeps only non-empty trimmed values', () => {

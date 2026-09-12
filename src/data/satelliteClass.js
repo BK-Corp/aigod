@@ -1,3 +1,5 @@
+import { t } from '../i18n.js';
+
 /**
  * Satellite classification — CelesTrak source group → operator-legible class.
  *
@@ -171,7 +173,13 @@ export function satelliteClassLegend(counts) {
     const count = counts?.[klass];
     if (!(count > 0)) continue;
     const spec = SATELLITE_CLASSES[klass];
-    result.push({ klass, label: spec.label, color: spec.color, blurb: spec.blurb, count });
+    result.push({
+      klass,
+      label: t(`satelliteClass.${klass}.label`, { defaultValue: spec.label }),
+      color: spec.color,
+      blurb: t(`satelliteClass.${klass}.blurb`, { defaultValue: spec.blurb }),
+      count,
+    });
   }
   return result;
 }

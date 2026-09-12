@@ -11,6 +11,7 @@ services:
     container_name: ai_aigod_app
     ports:
       - "${PORT:-21020}:8000"
+    env_file: .env
     environment:
       - PORT=8000
       - HOST=0.0.0.0

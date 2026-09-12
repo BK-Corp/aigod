@@ -1,6 +1,22 @@
 import * as Cesium from 'cesium';
 import { governorRequestRender } from './renderGovernor.js';
-import { keySetupRequirement } from './keySetupCore.mjs';
+import { KEY_SETUP_KEYS, keySetupRequirement } from './keySetupCore.mjs';
+import { t } from './i18n.js';
+
+/**
+ * Localized "Needs <env vars> — add it in Provider Settings" copy for a key id.
+ * Falls back to the pure {@link keySetupRequirement} text before i18n init.
+ * @param {string} id
+ * @returns {string}
+ */
+function localizedRequirement(id) {
+  const entry = KEY_SETUP_KEYS.find((candidate) => candidate.id === id);
+  if (!entry) return '';
+  return t('keySetup.requirement', {
+    envVars: entry.envVars.join(' + '),
+    defaultValue: keySetupRequirement(id),
+  });
+}
 
 /**
  * Why Google 3D is unavailable, phrased so the tooltip and toast recommend the
@@ -12,8 +28,15 @@ import { keySetupRequirement } from './keySetupCore.mjs';
  * @returns {string}
  */
 export function photorealUnavailableReason(hasCredentials) {
-  if (hasCredentials) return 'Google 3D tiles unavailable — check the key\'s API restrictions, quota, or network';
-  return `${keySetupRequirement('google-maps')} — or a Cesium ion token for the ion-hosted route`;
+  if (hasCredentials) {
+    return t('keySetup.photorealUnavailable', {
+      defaultValue: 'Google 3D tiles unavailable — check the key\'s API restrictions, quota, or network',
+    });
+  }
+  return t('keySetup.photorealNoCredentials', {
+    requirement: localizedRequirement('google-maps'),
+    defaultValue: `${keySetupRequirement('google-maps')} — or a Cesium ion token for the ion-hosted route`,
+  });
 }
 
 export const MAP_STACKS = [
@@ -155,9 +178,13 @@ export class MapStackController {
    * @returns {string}
    */
   _unavailableReason(stack) {
-    if (stack?.requiresIon) return keySetupRequirement('cesium-ion');
+    if (stack?.requiresIon) return localizedRequirement('cesium-ion');
     if (stack?.kind === 'photoreal') return photorealUnavailableReason(this._hasPhotorealCredentials());
-    return `${stack?.label || 'This map stack'} is unavailable`;
+    const label = stack?.label || t('presets.thisMapStack', { defaultValue: 'This map stack' });
+    return t('presets.stackUnavailable', {
+      label,
+      defaultValue: `${stack?.label || 'This map stack'} is unavailable`,
+    });
   }
 
   /** A direct Google key or an ion token is enough to attempt Google 3D. */

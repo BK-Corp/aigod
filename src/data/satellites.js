@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium';
 import { twoline2satrec, propagate, gstime, eciToGeodetic, degreesLong, degreesLat } from 'satellite.js';
+import { t } from '../i18n.js';
 import { registerPickOwner, unregisterPickOwner, isOwnedByOtherLayer, resolvePickId } from './pickRegistry.js';
 import { findNextIssPass } from './issPass.js';
 import {
@@ -2145,14 +2146,19 @@ const satellitesLayer = {
     const loading = _denseStatus === 'loading';
     const failed = _denseStatus === 'failed';
     const active = _params.catalog === 'dense' && _denseStatus === 'ready';
-    let title = 'Add the full Starlink broadband shell (thousands of extra points)';
-    if (loading) title = 'Loading the Starlink shell…';
-    else if (failed) title = `Starlink ${_denseError || 'load failed'} — click to retry`;
-    else if (active) title = 'Showing the full Starlink shell — click for the core catalog only';
+    const denseLabel = t('satellites.dense', { defaultValue: 'DENSE' });
+    let title = t('satellites.addShellTitle', { defaultValue: 'Add the full Starlink broadband shell (thousands of extra points)' });
+    if (loading) {
+      title = t('satellites.loadingShellTitle', { defaultValue: 'Loading the Starlink shell…' });
+    } else if (failed) {
+      title = t('satellites.failedShellTitle', { error: _denseError || 'load failed', defaultValue: `Starlink ${_denseError || 'load failed'} — click to retry` });
+    } else if (active) {
+      title = t('satellites.showingShellTitle', { defaultValue: 'Showing the full Starlink shell — click for the core catalog only' });
+    }
     return {
       chips: [{
         id: 'catalog',
-        label: loading ? 'DENSE ···' : (failed ? 'DENSE ✕' : 'DENSE'),
+        label: loading ? `${denseLabel} ···` : (failed ? `${denseLabel} ✕` : denseLabel),
         active,
         busy: loading,
         disabled: loading,

@@ -10,7 +10,18 @@
 // state is re-synced from controller state (never optimistically), so a failed
 // or superseded switch still leaves the truly-active stack lit.
 
-import { keySetupRequirement } from './keySetupCore.mjs';
+import { KEY_SETUP_KEYS, keySetupRequirement } from './keySetupCore.mjs';
+import { t } from './i18n.js';
+
+/** Localized "Needs <env vars> — add it in Provider Settings" copy. */
+function localizedRequirement(id) {
+  const entry = KEY_SETUP_KEYS.find((candidate) => candidate.id === id);
+  if (!entry) return '';
+  return t('keySetup.requirement', {
+    envVars: entry.envVars.join(' + '),
+    defaultValue: keySetupRequirement(id),
+  });
+}
 
 export const MAP_STACK_CHIP_CLASS = 'map-stack-chip';
 export const PRESENTED_MAP_STACK_IDS = Object.freeze([
@@ -35,15 +46,21 @@ export const PRESENTED_MAP_STACK_IDS = Object.freeze([
  */
 export function mapStackChipModel(stack, activeId) {
   const available = stack?.available !== false;
-  const label = String(stack?.label ?? stack?.id ?? '');
+  const id = String(stack?.id ?? '');
+  const sourceLabel = String(stack?.label ?? stack?.id ?? '');
+  const label = id
+    ? t(`presets.stacks.${id}`, { defaultValue: sourceLabel })
+    : sourceLabel;
   const requiresIon = stack?.requiresIon === true;
   const fallbackReason = requiresIon
-    ? keySetupRequirement('cesium-ion')
-    : `${label || 'This map stack'} is unavailable`;
+    ? localizedRequirement('cesium-ion')
+    : t('presets.stackUnavailable', {
+      label: sourceLabel || t('presets.thisMapStack', { defaultValue: 'This map stack' }),
+      defaultValue: `${sourceLabel || 'This map stack'} is unavailable`,
+    });
   const unavailableHint = available ? '' : String(stack?.unavailableReason || fallbackReason);
   return {
-    id: String(stack?.id ?? ''),
-    label,
+    id,
     available,
     active: !!stack?.id && stack.id === activeId,
     requiresIon,
@@ -102,7 +119,11 @@ export function renderMapStackChips(container, stacks, { activeId = null, onSele
     chip.setAttribute('aria-pressed', String(model.active));
     chip.setAttribute('aria-disabled', String(!model.available));
     if (!model.available) {
-      chip.setAttribute('aria-label', `${model.label} unavailable: ${model.unavailableHint}`);
+      chip.setAttribute('aria-label', t('presets.stackUnavailableAria', {
+        label: model.label,
+        hint: model.unavailableHint,
+        defaultValue: `${model.label} unavailable: ${model.unavailableHint}`,
+      }));
     }
 
     const label = ownerDoc.createElement('span');

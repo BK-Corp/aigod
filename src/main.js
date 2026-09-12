@@ -34,8 +34,36 @@ import { installScopeMask } from './scopeMask.js';
 import { initFirstRunExperience } from './firstRunExperience.js';
 import { initKeySetup } from './keySetup.js';
 import { loadPhotorealisticTileset } from './mapStartup.js';
+import { initI18n, translateDom, persistLanguage, currentLanguage, t } from './i18n.js';
 
 initLogoGaze();
+// Initialize i18n BEFORE any module paints user-facing text. The init promise
+// resolves with `vi` (the mandated default) before the loader status is read,
+// so the first paint is already localized.
+void initI18n().then(() => translateDom(document));
+
+/**
+ * Wire the language switcher chip in the top-center nav. An explicit choice is
+ * persisted and the page reloads, so every label — including the ones this app
+ * paints from JavaScript at init — comes back in the chosen language.
+ */
+function initLanguageSwitcher() {
+  const switcher = document.getElementById('lang-switcher');
+  if (!switcher) return;
+  const buttons = switcher.querySelectorAll('[data-lang]');
+  const active = currentLanguage();
+  for (const button of buttons) {
+    button.setAttribute('aria-pressed', String(button.dataset.lang === active));
+  }
+  for (const button of buttons) {
+    button.addEventListener('click', () => {
+      const next = button.dataset.lang;
+      if (next === currentLanguage()) return;
+      persistLanguage(next);
+      globalThis.location?.reload?.();
+    });
+  }
+}
 
 /**
  * Extract a human-readable error message from any thrown value.
@@ -73,7 +101,7 @@ async function init() {
   const loaderStatus = loadingScreen.querySelector('.loader-status');
 
   try {
-    loaderStatus.textContent = 'Configuring viewer...';
+    loaderStatus.textContent = t('loading.configuringViewer', { defaultValue: 'Configuring viewer...' });
 
     // A direct Google key provides Google 3D plus GEV place search. Cesium ion
     // can host the same 3D tiles and also powers Bing/world-terrain stacks.
@@ -146,8 +174,8 @@ async function init() {
     viewer.scene.skyAtmosphere.brightnessShift = -0.08;
 
     loaderStatus.textContent = googleApiKey || cesiumToken
-      ? 'Loading Google 3D Tiles...'
-      : 'Loading the keyless globe...';
+      ? t('loading.loadingGoogleTiles', { defaultValue: 'Loading Google 3D Tiles...' })
+      : t('loading.loadingKeylessGlobe', { defaultValue: 'Loading the keyless globe...' });
     const photoreal = await loadPhotorealisticTileset(Cesium, {
       googleApiKey,
       cesiumToken,
@@ -164,12 +192,12 @@ async function init() {
         const tileError = photoreal.errors.at(-1);
         console.warn('[Init] Google 3D Tiles unavailable, using the keyless globe:', tileError);
         const tileErrorDetail = describeError(tileError);
-        loaderStatus.textContent = `Google 3D Tiles unavailable (${tileErrorDetail}). Loading the keyless globe...`;
+        loaderStatus.textContent = t('loading.tilesUnavailable', { detail: tileErrorDetail, defaultValue: `Google 3D Tiles unavailable (${tileErrorDetail}). Loading the keyless globe...` });
       }
       viewer.scene.globe.show = true;
     }
 
-    loaderStatus.textContent = 'Initializing systems...';
+    loaderStatus.textContent = t('loading.initializingSystems', { defaultValue: 'Initializing systems...' });
 
     const mapStackController = new MapStackController(viewer, {
       googleTileset: tileset,
@@ -197,10 +225,10 @@ async function init() {
 
     // If no share link state, do default fly-to Austin
     if (!styleManager.hasShareState) {
-      loaderStatus.textContent = 'Flying to Austin, TX...';
+      loaderStatus.textContent = t('loading.flyingToAustin', { defaultValue: 'Flying to Austin, TX...' });
       flyToAustin(viewer);
     } else {
-      loaderStatus.textContent = 'Restoring shared view...';
+      loaderStatus.textContent = t('loading.restoringSharedView', { defaultValue: 'Restoring shared view...' });
     }
 
     // Initialize data layer manager
@@ -272,6 +300,10 @@ async function init() {
     // (prod builds, non-local visitors), so this costs prod exactly nothing.
     void initKeySetup();
 
+    // Language switcher chip (vi default). Wired after the first DOM walk so
+    // the pressed state matches the locale i18next actually settled on.
+    initLanguageSwitcher();
+
     // Expose for debugging
     // Idle render governor: flips the scene into requestRenderMode whenever
     // nothing animates per frame. Installed AFTER every module above has had
@@ -330,7 +362,7 @@ async function init() {
 
   } catch (error) {
     console.error("God's Eye View initialization failed:", error);
-    loaderStatus.textContent = `Error: ${describeError(error)}`;
+    loaderStatus.textContent = t('loading.error', { detail: describeError(error), defaultValue: `Error: ${describeError(error)}` });
     loaderStatus.style.color = '#ff4444';
   }
 }

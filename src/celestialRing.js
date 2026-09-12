@@ -1,5 +1,6 @@
 import * as Cesium from 'cesium';
 import { governorRequestRender } from './renderGovernor.js';
+import { t } from './i18n.js';
 
 /** Outer edge of the existing NVG/FLIR keyhole in normalized shader space. */
 export const KEYHOLE_OUTER_RADIUS = 1.05;

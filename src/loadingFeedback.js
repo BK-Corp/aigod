@@ -1,4 +1,5 @@
 import { installationFeedback } from './data/installationFeedback.js';
+import { t } from './i18n.js';
 
 export const LOADING_REVEAL_DELAY_MS = 160;
 export const LOADING_TERMINAL_DWELL_MS = 2200;
@@ -29,7 +30,7 @@ export function normalizeLayerLoading(layer = {}) {
   const accepted = Boolean(stats.lastUpdate) || count > 0;
   return {
     id: String(layer.id || ''),
-    label: String(layer.name || layer.id || 'Layer'),
+    label: t(`layers.${String(layer.id || '')}`, { defaultValue: String(layer.name || layer.id || 'Layer') }),
     loading,
     disabling,
     refresh: loading && layer.enabled && (stats.refreshing === true || accepted),
@@ -181,7 +182,7 @@ export function reduceTrafficSyncFeedback(previous, {
       // Neutral default: the layer always supplies its own LIVE/SIMULATED
       // label, and a fallback string must never claim a live feed on a
       // keyless build.
-      label: label || 'syncing road network',
+      label: label || t('trafficSync.syncing', { defaultValue: 'syncing road network' }),
       progressText: hasProgress ? `${progressPct}%` : '...',
     };
   }
@@ -305,22 +306,34 @@ export function presentLoadingFeedback(state, summary, nowMs) {
   }
   if (!state?.visible) return null;
   if (state.phase === 'terminal') {
-    const labels = { complete: 'LOAD COMPLETE', cancelled: 'LOAD CANCELLED', error: 'LOAD FAILED' };
+    const labels = {
+      complete: t('loading.loadComplete', { defaultValue: 'LOAD COMPLETE' }),
+      cancelled: t('loading.loadCancelled', { defaultValue: 'LOAD CANCELLED' }),
+      error: t('loading.loadFailed', { defaultValue: 'LOAD FAILED' }),
+    };
     const label = state.operation === 'disabling' && state.terminal === 'complete'
-      ? 'LIVE DATA OFF'
+      ? t('loading.liveDataOff', { defaultValue: 'LIVE DATA OFF' })
       : state.terminal === 'complete' && state.activeIds?.length === 1 && state.activeIds[0] === 'military-installations'
-        ? 'MAPPED SITES LOADED' : labels[state.terminal] || 'LOAD COMPLETE';
+        ? t('loading.mappedSitesLoaded', { defaultValue: 'MAPPED SITES LOADED' })
+        : labels[state.terminal] || t('loading.loadComplete', { defaultValue: 'LOAD COMPLETE' });
     return { state: state.terminal, label, detail: '' };
   }
   const active = summary.active;
   if (active.length === 1 && active[0].installationRetry && !summary.disabling) {
-    return { state: 'loading', label: active[0].installationRetry.retrying
-      ? 'RETRYING MAPPED SITES' : 'FETCHING MAPPED SITES', detail: 'OpenStreetMap · Overpass' };
+    return {
+      state: 'loading',
+      label: active[0].installationRetry.retrying
+        ? t('loading.retryingMappedSites', { defaultValue: 'RETRYING MAPPED SITES' })
+        : t('loading.fetchingMappedSites', { defaultValue: 'FETCHING MAPPED SITES' }),
+      detail: 'OpenStreetMap · Overpass',
+    };
   }
   const elapsed = Math.max(0, nowMs - state.startedAt);
   const label = summary.disabling
-    ? 'TURNING OFF LIVE DATA'
-    : summary.refresh ? 'REFRESHING LIVE DATA' : 'LOADING LIVE DATA';
+    ? t('loading.turningOffLiveData', { defaultValue: 'TURNING OFF LIVE DATA' })
+    : summary.refresh
+      ? t('loading.refreshingLiveData', { defaultValue: 'REFRESHING LIVE DATA' })
+      : t('loadingLiveData', { defaultValue: 'LOADING LIVE DATA' });
   const names = active.slice(0, 2).map((record) => record.label).join(' · ');
   const suffix = active.length > 2 ? ` +${active.length - 2}` : '';
   return {

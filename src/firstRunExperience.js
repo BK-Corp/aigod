@@ -8,6 +8,7 @@
 // operator needs the map explained more than once, so it returns every fresh
 // browser session until they say otherwise:
 //
+import { t } from './i18n.js';
 //   - a share link never sees it — its author already chose the experience;
 //   - `?welcome=0` suppresses, `?welcome=1` replays (it outranks BOTH the
 //     session flag and the durable one, so support can always demo it);
@@ -32,10 +33,16 @@ export const FIRST_RUN_SESSION_KEY = 'gev:first-run-mission-session:v1';
  */
 export const ENVIRONMENTAL_LABEL_CHOICE = 'ENVIRONMENTAL';
 
-const ENVIRONMENTAL_LABELS = Object.freeze({
-  ENVIRONMENTAL: Object.freeze({ title: 'ENVIRONMENTAL' }),
-  EARTH_WATCH: Object.freeze({ title: 'EARTH WATCH' }),
-  ACTIVE_EVENTS: Object.freeze({ title: 'ACTIVE EVENTS' }),
+const ENVIRONMENTAL_LABEL_KEYS = Object.freeze({
+  ENVIRONMENTAL: 'firstRun.environmentalTitle',
+  EARTH_WATCH: 'firstRun.earthWatchTitle',
+  ACTIVE_EVENTS: 'firstRun.activeEventsTitle',
+});
+
+const ENVIRONMENTAL_LABEL_EN = Object.freeze({
+  ENVIRONMENTAL: 'ENVIRONMENTAL',
+  EARTH_WATCH: 'EARTH WATCH',
+  ACTIVE_EVENTS: 'ACTIVE EVENTS',
 });
 
 /**
@@ -43,7 +50,8 @@ const ENVIRONMENTAL_LABELS = Object.freeze({
  * @returns {{title: string}} The label set the constant above selects.
  */
 export function environmentalLabel(choice = ENVIRONMENTAL_LABEL_CHOICE) {
-  return ENVIRONMENTAL_LABELS[choice] || ENVIRONMENTAL_LABELS.ENVIRONMENTAL;
+  const resolved = ENVIRONMENTAL_LABEL_KEYS[choice] ? choice : ENVIRONMENTAL_LABEL_CHOICE;
+  return { title: t(ENVIRONMENTAL_LABEL_KEYS[resolved], { defaultValue: ENVIRONMENTAL_LABEL_EN[resolved] }) };
 }
 
 /*
@@ -90,12 +98,12 @@ export const FIRST_RUN_MISSIONS = Object.freeze({
   contacts: Object.freeze({
     kind: 'context',
     contextMode: 'contacts',
-    busyText: 'Starting live contacts…',
+    busyKey: 'firstRun.contactsBusy',
   }),
   'space-missions': Object.freeze({
     kind: 'context',
     contextMode: 'space-missions',
-    busyText: 'Opening space missions…',
+    busyKey: 'firstRun.spaceMissionsBusy',
   }),
   environmental: Object.freeze({
     kind: 'globe',
@@ -113,7 +121,7 @@ export const FIRST_RUN_MISSIONS = Object.freeze({
     // before a launch. LEDGERED post-launch. Until it lands, keyless visitors
     // are judged on the layer row, which tells them the truth.
     layerIds: Object.freeze(['earthquakes', 'local-firms']),
-    busyText: 'Scanning active events…',
+    busyKey: 'firstRun.environmentalBusy',
   }),
   explore: Object.freeze({ kind: 'none' }),
 });
@@ -341,7 +349,9 @@ export function initFirstRunExperience({
   const status = root.querySelector('[data-first-run-status]');
   const suppressBox = root.querySelector('[data-first-run-suppress]');
   const buttons = [...root.querySelectorAll('[data-first-run-choice]')];
-  const defaultStatus = status?.textContent || '';
+  const defaultStatus = status
+    ? t('firstRun.tip', { defaultValue: 'Tip: the GEV MIC button in the dock lets you talk to the map.' })
+    : '';
   const previouslyFocused = documentRef.activeElement;
   let busy = false;
   let closing = false;
@@ -427,7 +437,7 @@ export function initFirstRunExperience({
     // <body> mid-flight and strands a keyboard visitor outside the launcher.
     for (const button of buttons) button.setAttribute('aria-disabled', String(next));
     if (!status) return;
-    if (next) status.textContent = FIRST_RUN_MISSIONS[choice]?.busyText || 'Working…';
+    if (next) status.textContent = t(FIRST_RUN_MISSIONS[choice]?.busyKey || 'firstRun.working', { defaultValue: 'Working…' });
     else if (status.dataset.sticky !== 'true') status.textContent = defaultStatus;
   };
 
@@ -472,7 +482,7 @@ export function initFirstRunExperience({
     const detail = Array.isArray(failed) && failed.length ? ` (${failed.join(', ')})` : '';
     if (status) {
       status.dataset.sticky = 'true';
-      status.textContent = `Could not open that mission${detail}. Retry or explore manually.`;
+      status.textContent = t('firstRun.missionFailed', { detail, defaultValue: `Could not open that mission${detail}. Retry or explore manually.` });
     }
     setBusy(false);
   };
@@ -488,7 +498,7 @@ export function initFirstRunExperience({
     if (box) box.checked = !wanted;
     if (!status) return;
     status.dataset.sticky = 'true';
-    status.textContent = 'This browser is blocking storage, so that could not be saved.';
+    status.textContent = t('firstRun.storageBlocked', { defaultValue: 'This browser is blocking storage, so that could not be saved.' });
   };
 
   function onKeyDown(event) {

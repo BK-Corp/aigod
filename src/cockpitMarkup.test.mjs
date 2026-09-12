@@ -68,7 +68,7 @@ test('Cockpit vision cycle exposes exactly five real visual styles without NONE'
   assert.match(ui, /const modes = COCKPIT_VISION_MODES;/);
   assert.match(ui, /const labels = \{ optical: inherited, crt: 'CRT', nvg: 'NVG', thermal: 'FLIR', noir: 'NOIR' \};/);
   assert.doesNotMatch(ui, /none: 'NONE'/);
-  assert.match(ui, /getInheritedVisionLabel: \(\) => \([\s\S]*?STYLE_STATUS_LABELS\[this\.activeStyle\]/);
+  assert.match(ui, /getInheritedVisionLabel: \(\) => styleStatusLabel\(this\.activeStyle\)/);
   assert.match(html, /id="cockpit-vision-current-label"[^>]*>NORMAL<\/strong>/);
   assert.match(ui, /const target = applyCockpitVisionStageIntensities\(this\.stages, next, this\._cockpitVisionRestore\);/);
   assert.match(ui, /this\._cockpitVisionRestore = captureCockpitVisionBaseline\(this\.stages, this\.transitions\);/);
@@ -721,7 +721,7 @@ test('cockpit summary presents the focused item as Contact', () => {
   );
   assert.ok(match, 'cockpit Contact summary is missing');
   assert.match(match[0], /aria-label="Contact cockpit summary"/);
-  assert.match(match[0], /class="cockpit-context-kicker">CONTACT</);
+  assert.match(match[0], /class="cockpit-context-kicker"[^>]*>CONTACT</);
   assert.match(match[0], /aria-label="Contact navigation"/);
   assert.match(match[0], /aria-label="Previous — prior visited contact in the 250 km window"/);
   assert.match(match[0], /aria-label="Next — nearest unvisited contact in the 250 km window"/);
@@ -779,7 +779,7 @@ test('cockpit briefing cycle control keeps its state as the accessible name', ()
     /setBriefAutoRotate\(enabled\) \{([\s\S]*?)\n  \}\n\n  startBriefRotation/,
   );
   assert.ok(update, 'cockpit briefing cycle state updater is missing');
-  assert.match(update[1], /const label = this\.briefAutoRotateEnabled \? 'CYCLE ON' : 'CYCLE OFF';/);
+  assert.match(update[1], /const label = this\.briefAutoRotateEnabled[\s\S]*?t\('cockpit\.cycleOn'/);
   assert.match(update[1], /setAttribute\('aria-label', label\)/);
   assert.match(update[1], /\.title = help;/);
   assert.doesNotMatch(update[1], /setAttribute\('aria-label', help\)/);
