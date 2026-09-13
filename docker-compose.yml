@@ -7,7 +7,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: registry.bkholding.vn/ai.aigod.app:${TAG:-0.1.2}
+    image: registry.bkholding.vn/ai.aigod.app:${TAG:-0.1.3}
     container_name: ai_aigod_app
     ports:
       - "${PORT:-21020}:8000"
