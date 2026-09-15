@@ -201,11 +201,39 @@ export function silenceRadioForVoice({ duckRadio, pauseRadio } = {}) {
  */
 const SUPERSEDED_RESPONSE_MEMORY = 8;
 
-export function initGevVoiceCommands({ viewer, styleManager, dataManager, sceneDirector = null, annotations = null }) {
+export async function initGevVoiceCommands({ viewer, styleManager, dataManager, sceneDirector = null, annotations = null }) {
   if (window.__gevVoiceCommands && typeof window.__gevVoiceCommands.stop === 'function') {
     window.__gevVoiceCommands.stop({ removeUi: true });
   }
   const runner = createGevActionRunner({ viewer, styleManager, dataManager, sceneDirector, annotations });
+
+  // Quick probe: is the OpenAI Realtime backend configured?
+  let openAiAvailable = false;
+  try {
+    const probe = await fetch('/api/realtime/token?tier=mini', { method: 'GET', cache: 'no-store' });
+    openAiAvailable = probe.ok;
+  } catch { /* network error → assume unavailable */ }
+
+  // If OpenAI is unavailable and the browser supports WebKit Speech Recognition,
+  // use the lightweight fallback that runs entirely client-side.
+  if (!openAiAvailable) {
+    try {
+      const { isWebkitSpeechSupported, WebKitVoiceFallback } = await import('./webkitFallback.js');
+      if (isWebkitSpeechSupported) {
+        const ui = createVoiceControl({ reset: true });
+        const controller = new WebKitVoiceFallback({ runner, ui });
+        controller.buttonHandler = () => {
+          if (controller.isActive()) controller.stop();
+          else controller.start();
+        };
+        ui.button.addEventListener('click', controller.buttonHandler);
+        controller.bindKeyboardShortcut();
+        window.__gevVoiceCommands = controller;
+        return controller;
+      }
+    } catch { /* fallback module missing or broken → fall through to OpenAI path */ }
+  }
+
   const ui = createVoiceControl({ reset: true });
   const radioLayer = dataManager?.layers?.get('radio')?.module || null;
   const controller = new GevRealtimeController({ runner, ui, radioLayer, dataManager });
