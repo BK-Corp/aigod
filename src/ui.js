@@ -523,7 +523,7 @@ const SHARPEN_SHADER = /* glsl */ `
 `;
 
 /**
- * Central UI orchestrator for the God's Eye View application.
+ * Central UI orchestrator for the AI RADAR application.
  *
  * Responsibilities:
  * - CesiumJS PostProcessStage pipeline: registers per-style GLSL stages

@@ -1,5 +1,5 @@
 {
-  "title": "Mắt Thiên Tâm",
+  "title": "AI RADAR",
   "subtitle": "KHÔNG CÓ NƠI NÀO BỊ BỎ LẠI",
   "brand": "MẮT THÂN TÂM",
   "activeStyle": "KIỂU DÁNG HOẠT ĐỘNG",
@@ -131,10 +131,10 @@
     }
   },
   "presets": {
-    "title": "BỘ ĐỊNH HÌNH TRỰC QUAN",
-    "expandAria": "Mở rộng Bộ định hình trực quan",
-    "pinAria": "Ghim bộ định hình trực quan",
-    "pinTitle": "Giữ bộ định hình trực quan luôn mở",
+    "title": "GÓC NHÌN",
+    "expandAria": "Mở rộng GÓC NHÌN",
+    "pinAria": "Ghim góc nhìn",
+    "pinTitle": "Giữ góc nhìn luôn mở",
     "mapSource": "NGUỒN BẢN ĐỒ",
     "mapSourceAria": "Nguồn bản đồ",
     "styleMini": "Kiểu",

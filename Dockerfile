@@ -1,4 +1,4 @@
-# God's Eye View — aigod
+# AI RADAR — aigod
 #
 # The live-data API proxies (aircraft, satellites, traffic, fires, CCTV, ...) are
 # Vite dev-server plugins (configureServer) — they do NOT exist under

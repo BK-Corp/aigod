@@ -1,5 +1,5 @@
 /**
- * i18next-backed localization layer for God's Eye View.
+ * i18next-backed localization layer for AI RADAR.
  *
  * Vietnamese (`vi`) is the DEFAULT language for every first visit. An explicit
  * choice made with the language switcher is persisted in `localStorage` under

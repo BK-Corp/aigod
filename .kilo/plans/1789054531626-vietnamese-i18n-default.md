@@ -2,7 +2,7 @@
 
 ## Summary
 
-Add an `i18next`-based localization layer to the God's Eye View app so all user-facing labels are translatable, with Vietnamese (`vi`) as the default language for every user regardless of browser language.
+Add an `i18next`-based localization layer to the AI RADAR app so all user-facing labels are translatable, with Vietnamese (`vi`) as the default language for every user regardless of browser language.
 
 ## Scope
 
@@ -11,7 +11,7 @@ Add an `i18next`-based localization layer to the God's Eye View app so all user-
   - `src/ui.js` (textContent / innerHTML assignments)
   - `src/main.js` (loader status lines)
   - `src/keySetup.js`, `src/firstRunExperience.js`, `src/overlays/worldOverlay.js`, `src/mapStackChips.js`, `src/celestialRing.js`
-- Out of scope: dynamic data values (coordinates, timestamps, counts, unit strings), Cesium attribution strings, and the brand title "GOD'S EYE VIEW".
+- Out of scope: dynamic data values (coordinates, timestamps, counts, unit strings), Cesium attribution strings, and the brand title "AI RADAR".
 
 ## Approach
 

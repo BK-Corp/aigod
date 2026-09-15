@@ -1428,7 +1428,7 @@ export class GevRealtimeController {
         content: [
           {
             type: 'input_text',
-            text: "Current God's Eye View viewport screenshot. Read any clearly visible street, building, and place labels in the image and combine them with the structured nearbyPlaces, streetLabels, and scene context. Do not invent labels that are not legible.",
+            text: "Current AI RADAR viewport screenshot. Read any clearly visible street, building, and place labels in the image and combine them with the structured nearbyPlaces, streetLabels, and scene context. Do not invent labels that are not legible.",
           },
           {
             type: 'input_image',
@@ -2587,7 +2587,7 @@ function createVoiceControl({ reset = false } = {}) {
         </div>
       </div>
       <button id="gev-voice-button" type="button" aria-label="${t('voice.buttonAria', { defaultValue: 'Voice control — hold Space to speak; click to toggle voice' })}" aria-describedby="gev-voice-help">
-        <span class="gev-mic-orbit"><img src="/mic.svg" alt="" /></span>
+        <span class="gev-mic-orbit"><img src="./mic.svg" alt="" /></span>
         <span class="gev-mic-label">${t('voice.onOff', { defaultValue: 'ON/OFF' })}</span>
       </button>
       <div class="gev-voice-visualizer" aria-hidden="true">

@@ -50,19 +50,14 @@ void initI18n().then(() => translateDom(document));
 function initLanguageSwitcher() {
   const switcher = document.getElementById('lang-switcher');
   if (!switcher) return;
-  const buttons = switcher.querySelectorAll('[data-lang]');
   const active = currentLanguage();
-  for (const button of buttons) {
-    button.setAttribute('aria-pressed', String(button.dataset.lang === active));
-  }
-  for (const button of buttons) {
-    button.addEventListener('click', () => {
-      const next = button.dataset.lang;
-      if (next === currentLanguage()) return;
-      persistLanguage(next);
-      globalThis.location?.reload?.();
-    });
-  }
+  const next = active === 'vi' ? 'en' : 'vi';
+  switcher.textContent = next.toUpperCase();
+  switcher.title = next === 'vi' ? 'Tiếng Việt' : 'English';
+  switcher.addEventListener('click', () => {
+    persistLanguage(next);
+    globalThis.location?.reload?.();
+  });
 }
 
 /**
@@ -92,7 +87,7 @@ function describeError(error) {
 }
 
 /**
- * GOD'S EYE VIEW — Main Entry Point
+ * AI RADAR — Main Entry Point
  * Initializes CesiumJS with Google Photorealistic 3D Tiles,
  * style system, intelligence HUD, location presets, and share links.
  */
@@ -361,7 +356,7 @@ async function init() {
     window.__godsEyeView.voiceCommands = initGevVoiceCommands({ viewer, styleManager, dataManager, sceneDirector, annotations });
 
   } catch (error) {
-    console.error("God's Eye View initialization failed:", error);
+    console.error("AI RADAR initialization failed:", error);
     loaderStatus.textContent = t('loading.error', { detail: describeError(error), defaultValue: `Error: ${describeError(error)}` });
     loaderStatus.style.color = '#ff4444';
   }

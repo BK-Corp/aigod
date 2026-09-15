@@ -1,5 +1,5 @@
 /* ═══════════════════════════════════════════════
-   GOD'S EYE VIEW — Dark Sci-Fi UI
+   AI RADAR — Dark Sci-Fi UI
    Apple meets Blade Runner
    ═══════════════════════════════════════════════ */
 
@@ -244,11 +244,8 @@ body.cockpit-mode #cockpit-cloud-effects.active {
   color: rgba(232, 234, 237, 0.55);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
 }
-#cesium-credits .cesium-credit-logoContainer,
-#cesium-credits .cesium-credit-textContainer,
-#cesium-credits .cesium-credit-expand-link {
-  display: inline-block;
-  vertical-align: middle;
+#cesium-credits {
+  display: none !important;
 }
 #cesium-credits a,
 #cesium-credits .cesium-credit-expand-link {
