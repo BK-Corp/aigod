@@ -3,8 +3,9 @@
 # The live-data API proxies (aircraft, satellites, traffic, fires, CCTV, ...) are
 # Vite dev-server plugins (configureServer) — they do NOT exist under
 # `vite preview`. The container therefore runs the Vite dev server, exactly as
-# the app's own launcher does. It serves the app at base /aigod/ and its proxies
-# at the root /api/ namespace, which the aistore gateway routes here.
+# the app's own launcher does. It serves the app at /aigod/app/ and its proxies
+# at /aigod/api/ (beka-layout plugin in vite.config.js), so the aistore gateway
+# forwards the single prefix /aigod/ here.
 FROM node:24-alpine
 
 WORKDIR /app
@@ -28,6 +29,6 @@ ENV PORT=8000
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD wget -q -O- http://127.0.0.1:8000/aigod/ || exit 1
+  CMD wget -q -O- http://127.0.0.1:8000/aigod/app/ || exit 1
 
 CMD ["npx", "vite", "--host", "0.0.0.0", "--port", "8000", "--strictPort"]
