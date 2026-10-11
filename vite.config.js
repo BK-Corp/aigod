@@ -7722,6 +7722,52 @@ function keySetupEndpoint() {
 }
 
 /**
+ * beka deploy layout (not upstream): one parent prefix, /aigod/app (SPA) and
+ * /aigod/api (the proxies below), so the gateway forwards /aigod/ whole.
+ *
+ * Kept to this one plugin so the vendored client and the proxy plugins stay
+ * byte-identical to upstream:
+ * - serve side: /aigod/api/* is mapped onto the /api/* middlewares, and the
+ *   pre-/app base (/aigod/<page>) redirects to /aigod/app/<page>;
+ * - client side: the quoted '/api/...' literals in src/ are rewritten as the
+ *   modules are served.
+ * ponytail: literal rewrite, misses an API URL built without a leading-quote
+ * '/api/' literal (none today) — switch to a shared API_BASE constant if
+ * upstream ever adds one.
+ */
+function bekaLayout() {
+  const clientSrc = path.join(__dirname, 'src') + path.sep;
+  return {
+    name: 'beka-layout',
+    enforce: 'pre',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url || '';
+        if (url.startsWith('/aigod/api/')) {
+          req.url = url.slice('/aigod'.length);
+        } else if (/^\/aigod(\/|\?|$)/.test(url) && !url.startsWith('/aigod/app/')) {
+          res.statusCode = 302;
+          res.setHeader('Location', '/aigod/app/' + url.slice('/aigod'.length).replace(/^\/(app(?=\?|$))?/, ''));
+          res.end();
+          return;
+        }
+        next();
+      });
+    },
+    // index.html hands the logo to src/logoGaze.js through a data- attribute,
+    // which Vite's base rewriting does not touch: under a sub-path it fetched
+    // /logo.svg from the gateway root and got a 404.
+    transformIndexHtml(html) {
+      return html.replace(/data-logo-src="\//g, 'data-logo-src="/aigod/app/');
+    },
+    transform(code, id) {
+      if (!id.startsWith(clientSrc) || !code.includes('/api/')) return null;
+      return { code: code.replace(/(['"`])\/api\//g, '$1/aigod/api/'), map: null };
+    },
+  };
+}
+
+/**
  * Main Vite configuration factory.
  *
  * Loads .env files via Vite's loadEnv, registers Cesium + local proxy
@@ -7738,12 +7784,13 @@ export default defineConfig(({ mode }) => {
   const env = { ...process.env };
   const localAllowedHosts = ['localhost', '127.0.0.1', '.local'];
   return {
-    base: '/aigod/',
+    base: '/aigod/app/',
     preview: {
       port: parseInt(env.PREVIEW_PORT, 10) || 20070,
       host: env.HOST || '0.0.0.0',
     },
     plugins: [
+      bekaLayout(),
       cesium(),
       openSkyProxy(),
       celestrakProxy(),
